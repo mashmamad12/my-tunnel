@@ -1,0 +1,57 @@
+name: Run V2Ray
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'deploy or stop'
+        required: true
+        default: 'deploy'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    if: github.event.inputs.command == 'deploy'
+    steps:
+      - name: Install V2Ray
+        run: |
+          bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh)
+      
+      - name: Create config
+        run: |
+          mkdir -p /usr/local/etc/v2ray
+          cat > /usr/local/etc/v2ray/config.json << EOF
+          {
+            "inbounds": [{
+              "port": 8080,
+              "protocol": "vmess",
+              "settings": {
+                "clients": [{"id": "${{ secrets.UUID }}"}]
+              },
+              "streamSettings": {
+                "network": "ws"
+              }
+            }],
+            "outbounds": [{"protocol": "freedom"}]
+          }
+          EOF
+      
+      - name: Get IP
+        run: |
+          echo "Server IP:"
+          curl -s ifconfig.me
+      
+      - name: Run V2Ray
+        run: |
+          v2ray run &
+          echo "V2Ray is running"
+          echo "PORT: 8080"
+          echo "UUID: ${{ secrets.UUID }}"
+          sleep 6h
+
+  stop:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.command == 'stop'
+    steps:
+      - name: Stop
+        run: echo "Workflow stopped - no action needed"
