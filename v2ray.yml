@@ -13,20 +13,19 @@ jobs:
     timeout-minutes: 360
     if: github.event.inputs.command == 'deploy'
     steps:
-      - name: Install V2Ray
+      - name: Install Xray
         run: |
-          bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh)
+          bash <(curl -sL https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh) install
       
       - name: Create config
         run: |
-          mkdir -p /usr/local/etc/v2ray
-          cat > /usr/local/etc/v2ray/config.json << EOF
+          cat > config.json << EOF
           {
             "inbounds": [{
               "port": 8080,
               "protocol": "vmess",
               "settings": {
-                "clients": [{"id": "${{ secrets.UUID }}"}]
+                "clients": [{"id": "12345678-1234-1234-1234-123456789012"}]
               },
               "streamSettings": {
                 "network": "ws"
@@ -36,17 +35,21 @@ jobs:
           }
           EOF
       
-      - name: Get IP
+      - name: Get server info
         run: |
+          echo "=================================="
           echo "Server IP:"
           curl -s ifconfig.me
+          echo ""
+          echo "Port: 8080"
+          echo "Protocol: vmess+ws"
+          echo "UUID: 12345678-1234-1234-1234-123456789012"
+          echo "=================================="
       
-      - name: Run V2Ray
+      - name: Run Xray
         run: |
-          v2ray run &
-          echo "V2Ray is running"
-          echo "PORT: 8080"
-          echo "UUID: ${{ secrets.UUID }}"
+          xray run -c config.json &
+          echo "Xray is running. Waiting 6 hours..."
           sleep 6h
 
   stop:
